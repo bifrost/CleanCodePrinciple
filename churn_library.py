@@ -59,8 +59,8 @@ class Encoder:
             f'add binary column {response}, ' +
             f'derieved from: {column}, true_category: "{true_category}"')
 
-        input_df[response] = input_df[column].apply(
-            lambda val: 1 if val == true_category else 0)
+        input_df[response] = 0
+        input_df.loc[input_df[column] == true_category, response] = 1
 
         return input_df
 
@@ -95,8 +95,7 @@ class Encoder:
             column = f'{category}_{response}'
 
             logging.info('add column %s', column)
-            input_df[column] = [groups[val]
-                                for val in input_df[category]]
+            input_df[column] = input_df[category].map(groups)
 
             encoded_columns.append(column)
 
@@ -183,7 +182,7 @@ class ExploratoryDataAnalysis:
 
     @staticmethod
     def __init_plot():
-        plt.figure(figsize=(20, 10))
+        plt.figure(figsize=(20, 20))
 
     def __save_plot(self, file_name):
         file_path = f'{self.data_path}/{file_name}'
@@ -419,7 +418,7 @@ class RocCurvePlot:
 
 class RandomForestGridSearchClassifier:
     '''
-    Utility class that implement GridSearch for RandomForest classifier
+    Class that implement GridSearch for RandomForest classifier
 
     Implement a sklearn fit method so it can be used as a classifier
     '''
@@ -500,7 +499,7 @@ class MLPipeline():
                 (pd.DataFrame): pandas dataframe
         '''
         logging.info('import data from %s', input_path)
-        return pd.read_csv(input_path)
+        return pd.read_csv(input_path, index_col=[0])
 
     def perform_feature_engineering(self, input_df, response):
         '''
@@ -764,18 +763,18 @@ if __name__ == "__main__":
         'Avg_Utilization_Ratio'
     ]
 
-    PARAM_GRID = {
-        'n_estimators': [200],
-        'max_features': ['auto'],
-        'max_depth': [4],
-        'criterion': ['entropy']
-    }
     # PARAM_GRID = {
-    #    'n_estimators': [200, 500],
-    #    'max_features': ['auto', 'sqrt'],
-    #    'max_depth' : [4,5,100],
-    #    'criterion' :['gini', 'entropy']
+    #    'n_estimators': [200],
+    #    'max_features': ['auto'],
+    #    'max_depth': [4],
+    #    'criterion': ['entropy']
     # }
+    PARAM_GRID = {
+        'n_estimators': [200, 500],
+        'max_features': ['auto', 'sqrt'],
+        'max_depth': [4, 5, 100],
+        'criterion': ['gini', 'entropy']
+    }
 
     pipeline = MLPipeline(TARGET, CAT_COLUMNS, QUANT_COLUMNS, PARAM_GRID)
     pipeline.execute(r"./data/bank_data.csv")
